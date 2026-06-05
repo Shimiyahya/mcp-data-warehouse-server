@@ -1,0 +1,31 @@
+# virtualenv / build
+.venv/
+dist/
+build/
+*.egg-info/
+
+# python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# the warehouse is regenerated deterministically — don't commit the binary
+*.duckdb
+*.duckdb.wal
+
+# audit logs
+logs/
+*.log
+
+# secrets / env
+.env
+.env.*
+!.env.example
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

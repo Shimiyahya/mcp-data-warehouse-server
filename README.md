@@ -2,7 +2,7 @@
 
 > Query a synthetic financial data warehouse in natural language — safely — over the [Model Context Protocol](https://modelcontextprotocol.io).
 
-[![CI](https://github.com/<your-username>/mcp-data-warehouse-server/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-username>/mcp-data-warehouse-server/actions/workflows/ci.yml)
+[![CI](https://github.com/Shimiyahya/mcp-data-warehouse-server/actions/workflows/ci.yml/badge.svg)](https://github.com/Shimiyahya/mcp-data-warehouse-server/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
@@ -13,10 +13,6 @@ An MCP server that exposes a small **treasury & payments warehouse** (DuckDB) to
 - **What it is** — a read-only MCP server over DuckDB: schema/data-dictionary as resources, plus `list_tables` / `describe_table` / `query` tools.
 - **Why it's safe** — fully synthetic data, a physically **read-only** connection, **SELECT/WITH-only** validation via an AST parser, a per-table allow-list, forced row/byte caps, query timeouts, and a JSONL **audit log** of every call.
 - **What's interesting** — the questions require the model to discover the schema and plan 3–4-way joins (invoices ↔ payments ↔ FX ↔ counterparties) entirely on its own.
-
-![demo](docs/demo.gif)
-
-> _Claude answering a multi-join treasury question end-to-end via this server (record with [`vhs`](https://github.com/charmbracelet/vhs)/`asciinema` → `docs/demo.gif`)._
 
 ## Architecture
 

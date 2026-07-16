@@ -4,7 +4,7 @@ Every query the LLM proposes is parsed to an AST with ``sqlglot`` and accepted
 only if it is a *single* top-level ``SELECT``/``WITH``/set-operation that touches
 *only* allow-listed tables and no file/network/catalog functions. A ``LIMIT`` is
 then injected or clamped. Treat the model as an untrusted, prompt-injectable SQL
-author — this is defense in depth on top of the physically read-only connection.
+author; this is defense in depth on top of the physically read-only connection.
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ def validate_and_prepare(
     if not sql or not sql.strip():
         raise SQLGuardError("Empty query.", "empty")
 
-    # 1) Parse. A real parser — never split on ';' or keyword-match.
+    # 1) Parse with a real parser; never split on ';' or keyword-match.
     try:
         statements = [s for s in sqlglot.parse(sql, dialect="duckdb") if s is not None]
     except Exception as exc:  # noqa: BLE001 - surface any parse failure as a denial
@@ -97,12 +97,12 @@ def validate_and_prepare(
     if not isinstance(inner, _ALLOWED_TOP):
         raise SQLGuardError("Only read-only SELECT / WITH queries are allowed.", "non_select")
 
-    # CTE names are local aliases, not real tables — don't allow-list-check them.
+    # CTE names are local aliases, not real tables, so don't allow-list-check them.
     cte_names = {c.alias_or_name.lower() for c in inner.find_all(exp.CTE)}
 
     # 4) Every FROM/JOIN source must be a plain identifier table on the allow-list.
     #    A non-identifier source is a table-valued function such as
-    #    read_csv('/etc/passwd') / read_parquet('s3://…') — denied outright (this
+    #    read_csv('/etc/passwd') / read_parquet('s3://...'): denied outright (this
     #    is the file/network exfiltration class, and it parses as Table(this=Func)).
     for table in inner.find_all(exp.Table):
         src = table.this
@@ -140,5 +140,5 @@ def validate_and_prepare(
         prepared = inner.limit(cap + 1)
         return PreparedQuery(sql=prepared.sql(dialect="duckdb"), row_cap=cap, capped=True)
 
-    # User asked for <= cap rows — respect it exactly.
+    # User asked for <= cap rows; respect it exactly.
     return PreparedQuery(sql=inner.sql(dialect="duckdb"), row_cap=existing, capped=False)

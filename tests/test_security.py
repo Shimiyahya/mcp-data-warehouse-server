@@ -1,5 +1,5 @@
 """The most important file: the SQL guard must reject everything that isn't a
-single, read-only, allow-listed SELECT — and accept legitimate analytics."""
+single, read-only, allow-listed SELECT, and accept legitimate analytics."""
 
 from __future__ import annotations
 

@@ -2,7 +2,7 @@
 
 Exposes the synthetic treasury warehouse as MCP tools, resources, and a prompt.
 All database access goes through the read-only, allow-listed, audited path in
-:mod:`db`. Diagnostics go to stderr only — stdout is the JSON-RPC channel.
+:mod:`db`. Diagnostics go to stderr only; stdout is the JSON-RPC channel.
 """
 
 from __future__ import annotations
@@ -82,7 +82,7 @@ def query(sql: str, limit: int | None = None) -> dict[str, Any]:
     Only a single SELECT/WITH statement over the allow-listed tables is permitted;
     INSERT/UPDATE/DDL, multiple statements, and file/network functions are rejected.
     A LIMIT is enforced and the result is capped, so prefer aggregation in SQL over
-    pulling raw rows. Amounts are integer minor units — convert currencies via fx_rate.
+    pulling raw rows. Amounts are integer minor units; convert currencies via fx_rate.
     """
     wh = get_warehouse()
     try:
@@ -149,7 +149,7 @@ def analyze_cashflow(question: str = "") -> str:
         "You are a financial analyst with read-only access to a treasury & payments "
         "data warehouse via MCP tools (list_tables, describe_table, query). "
         "Workflow: (1) call list_tables; (2) describe_table for the tables you need; "
-        "(3) write read-only SELECT/WITH queries — the server enforces SELECT-only and "
+        "(3) write read-only SELECT/WITH queries. The server enforces SELECT-only and "
         "caps rows, so push aggregation into SQL. Money is stored as integer minor units; "
         "convert non-GBP amounts via the fx_rate table (join on rate_date + currency) to "
         "report in GBP. Show the SQL you run and explain your reasoning."

@@ -29,7 +29,7 @@ MAX_BYTES = 256 * 1024  # hard cap on the serialized result payload
 QUERY_TIMEOUT_S = 10.0  # wall-clock timeout per query
 SAMPLE_ROWS = 5  # rows returned by describe_table previews
 
-# Functions that read the filesystem / network — denied even though the
+# Functions that read the filesystem / network, denied even though the
 # connection is already read-only, as defense in depth.
 BLOCKED_FUNCTIONS: frozenset[str] = frozenset(
     {
@@ -123,8 +123,8 @@ DATA_DICTIONARY: dict[str, dict] = {
         },
     },
     "payment": {
-        "description": "Inbound and outbound payments. Some fail/return — "
-        "needed for settlement-rate questions.",
+        "description": "Inbound and outbound payments. Some fail or return, "
+        "which settlement-rate questions depend on.",
         "columns": {
             "payment_id": "Surrogate primary key.",
             "account_id": "FK -> bank_account the payment moved through.",
@@ -139,7 +139,7 @@ DATA_DICTIONARY: dict[str, dict] = {
     },
     "payment_allocation": {
         "description": "Bridge table: which payment cleared which invoice, and how much. "
-        "Many-to-many — one payment can clear several invoices and an invoice "
+        "Many-to-many: one payment can clear several invoices and an invoice "
         "can be paid in installments.",
         "columns": {
             "payment_id": "FK -> payment.",

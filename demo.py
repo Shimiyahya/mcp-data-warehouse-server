@@ -4,7 +4,7 @@ Spawns the server as a stdio subprocess, discovers its tools, and runs a manual
 agentic loop (so the reasoning trace is visible) until Claude answers a
 multi-step treasury question that requires several joins and an FX conversion.
 
-Run:  uv run python demo.py        (needs ANTHROPIC_API_KEY — see .env.example)
+Run:  uv run python demo.py        (needs ANTHROPIC_API_KEY, see .env.example)
 
 The model plans the SQL itself; the server only ever runs guarded, read-only
 queries. Everything below uses the official Anthropic + MCP Python SDKs.
@@ -29,7 +29,7 @@ SYSTEM = (
     "You are a treasury analyst with read-only access to a financial data warehouse "
     "via MCP tools (list_tables, describe_table, query). Workflow: call list_tables, "
     "then describe_table for the tables you need, then write read-only SELECT/WITH "
-    "queries — the server enforces SELECT-only and caps rows, so push aggregation into "
+    "queries. The server enforces SELECT-only and caps rows, so push aggregation into "
     "SQL. Money is stored as integer minor units; convert non-GBP amounts via the "
     "fx_rate table (join on rate_date + currency) to report in GBP. Show the SQL you run."
 )
@@ -67,7 +67,7 @@ async def main() -> None:
             for t in listed.tools
         ]
         print(
-            f"Connected to MCP server over stdio — {len(tools)} tools: "
+            f"Connected to MCP server over stdio with {len(tools)} tools: "
             f"{', '.join(t['name'] for t in tools)}\n"
         )
         print(f"Q: {QUESTION}\n" + "─" * 70)

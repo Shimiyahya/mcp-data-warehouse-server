@@ -3,7 +3,7 @@
 Run:  uv run python scripts/seed.py   (writes ./warehouse.duckdb)
 
 Everything is seeded from a fixed RNG (seed=42), so the database is byte-stable
-across machines — which is what makes the demo repeatable and the tests reliable.
+across machines, which is what makes the demo repeatable and the tests reliable.
 All data is fictional. Money is stored as integer minor units (pennies/cents).
 """
 

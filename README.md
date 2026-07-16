@@ -14,6 +14,10 @@ An MCP server that exposes a small **treasury & payments warehouse** (DuckDB) to
 - **Why it's safe** — fully synthetic data, a physically **read-only** connection, **SELECT/WITH-only** validation via an AST parser, a per-table allow-list, forced row/byte caps, query timeouts, and a JSONL **audit log** of every call.
 - **What's interesting** — the questions require the model to discover the schema and plan 3–4-way joins (invoices ↔ payments ↔ FX ↔ counterparties) entirely on its own.
 
+![Claude Code answering a multi-join treasury question via the MCP server](docs/demo.gif)
+
+> _Claude Code discovers the schema, plans the joins, sanity-checks FX coverage, and answers a multi-step treasury question through the server's guarded tools (3x speed)._
+
 ## Architecture
 
 ```mermaid

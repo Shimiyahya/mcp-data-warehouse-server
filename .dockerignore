@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+.env
+warehouse.duckdb*
+logs/
+docs/
+tests/
+demo.py
+Makefile
+deploy/

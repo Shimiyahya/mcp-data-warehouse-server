@@ -1,16 +1,24 @@
-"""MCP Data Warehouse Server (FastMCP, stdio).
+"""MCP Data Warehouse Server (FastMCP).
 
 Exposes the synthetic treasury warehouse as MCP tools, resources, and a prompt.
 All database access goes through the read-only, allow-listed, audited path in
 :mod:`db`. Diagnostics go to stderr only; stdout is the JSON-RPC channel.
+
+Transports: stdio (default, for local MCP clients) or streamable HTTP
+(``MCP_TRANSPORT=streamable-http``, for containers/Kubernetes). HTTP mode is
+stateless so replicas behind one Service are interchangeable, and serves
+``GET /health`` for liveness/readiness probes.
 """
 
 from __future__ import annotations
 
 import json
+import os
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from .audit import audit
 from .config import ALLOWED_TABLES, DATA_DICTIONARY
@@ -140,6 +148,17 @@ def table_resource(name: str) -> str:
         return json.dumps({"error": str(exc), "reason": exc.reason})
 
 
+# ── health (HTTP transport only; k8s liveness/readiness) ─────────────────
+@mcp.custom_route("/health", methods=["GET"])
+async def health(_request: Request) -> JSONResponse:
+    """200 once the read-only DuckDB connection is open, 503 otherwise."""
+    try:
+        get_warehouse()
+    except Exception as exc:  # noqa: BLE001 — any failure means "not ready"
+        return JSONResponse({"status": "unhealthy", "error": str(exc)}, status_code=503)
+    return JSONResponse({"status": "ok"})
+
+
 # ── prompt ────────────────────────────────────────────────────────────────
 @mcp.prompt()
 def analyze_cashflow(question: str = "") -> str:
@@ -161,8 +180,24 @@ def analyze_cashflow(question: str = "") -> str:
 
 
 def main() -> None:
-    """Console-script entry point: run the server over stdio."""
-    mcp.run()
+    """Console-script entry point.
+
+    ``MCP_TRANSPORT=stdio`` (default) or ``streamable-http``; in HTTP mode the
+    bind address and port come from ``MCP_HOST`` (default 0.0.0.0) and
+    ``MCP_PORT`` (default 8000).
+    """
+    transport = os.environ.get("MCP_TRANSPORT", "stdio").strip().lower()
+    if transport == "stdio":
+        mcp.run()
+        return
+    if transport != "streamable-http":
+        raise SystemExit(
+            f"Unsupported MCP_TRANSPORT: {transport!r} (use 'stdio' or 'streamable-http')"
+        )
+    mcp.settings.host = os.environ.get("MCP_HOST", "0.0.0.0")
+    mcp.settings.port = int(os.environ.get("MCP_PORT", "8000"))
+    mcp.settings.stateless_http = True
+    mcp.run(transport="streamable-http")
 
 
 if __name__ == "__main__":

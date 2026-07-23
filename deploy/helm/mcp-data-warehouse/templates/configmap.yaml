@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mcp-data-warehouse.fullname" . }}
+  labels:
+    {{- include "mcp-data-warehouse.labels" . | nindent 4 }}
+data:
+  MCP_TRANSPORT: streamable-http
+  MCP_PORT: {{ .Values.config.port | quote }}
+  MCP_WAREHOUSE_DB: {{ .Values.config.dbPath | quote }}
+  MCP_WAREHOUSE_AUDIT_LOG: {{ .Values.config.auditLogPath | quote }}

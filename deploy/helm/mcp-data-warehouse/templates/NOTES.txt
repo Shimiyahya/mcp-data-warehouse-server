@@ -1,0 +1,15 @@
+{{ .Chart.Name }} is deploying.
+
+Wait for the pod to pass its readiness probe:
+
+  kubectl rollout status deploy/{{ include "mcp-data-warehouse.fullname" . }} -n {{ .Release.Namespace }}
+
+Reach the MCP endpoint from your machine:
+
+  kubectl port-forward svc/{{ include "mcp-data-warehouse.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+
+Then smoke-test it (health + MCP handshake + read-only query):
+
+  uv run python scripts/smoke_http.py http://127.0.0.1:{{ .Values.service.port }}
+
+MCP endpoint: http://127.0.0.1:{{ .Values.service.port }}/mcp (streamable HTTP)

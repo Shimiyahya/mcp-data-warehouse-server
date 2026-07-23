@@ -1,0 +1,12 @@
+apiVersion: v2
+name: mcp-data-warehouse
+description: >-
+  Read-only MCP data warehouse server (DuckDB) over streamable HTTP.
+  The synthetic warehouse is baked into the image, so the chart has no
+  storage dependencies.
+type: application
+version: 0.1.0
+appVersion: "0.2.0"
+home: https://github.com/Shimiyahya/mcp-data-warehouse-server
+sources:
+  - https://github.com/Shimiyahya/mcp-data-warehouse-server

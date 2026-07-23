@@ -1,0 +1,64 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/shimiyahya/mcp-data-warehouse-server
+  # Defaults to the chart's appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+# Server configuration, rendered into the ConfigMap.
+config:
+  # DuckDB file baked into the image at build time.
+  dbPath: /data/warehouse.duckdb
+  # Audit JSONL goes to the writable scratch volume; the root fs is read-only.
+  auditLogPath: /tmp/audit.jsonl
+  port: 8000
+
+# Probes and resources are deliberately not optional: without them the
+# scheduler can neither place nor protect this workload honestly.
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 3
+  periodSeconds: 5
+  failureThreshold: 3
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    # DuckDB caps itself at 512MB (set at connect time); this leaves headroom
+    # for the Python runtime on top.
+    cpu: 500m
+    memory: 768Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

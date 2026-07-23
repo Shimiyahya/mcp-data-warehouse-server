@@ -1,6 +1,6 @@
 [project]
 name = "mcp-data-warehouse-server"
-version = "0.1.0"
+version = "0.2.0"
 description = "An MCP server that exposes a synthetic financial data warehouse (DuckDB) for safe, read-only natural-language querying by an LLM."
 readme = "README.md"
 requires-python = ">=3.11"

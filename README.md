@@ -22,7 +22,7 @@ An MCP server that exposes a small **treasury & payments warehouse** (DuckDB) to
 
 ```mermaid
 flowchart LR
-    A["Claude<br/>(Anthropic SDK)"] -- "stdio JSON-RPC" --> B["MCP Server<br/>(FastMCP)"]
+    A["Claude<br/>(Anthropic SDK)"] -- "stdio or streamable HTTP" --> B["MCP Server<br/>(FastMCP)"]
     B -- "tools: list_tables · describe_table · query" --> C
     B -- "resources: schema://catalog · table://{name}" --> C
     B -- "prompt: analyze_cashflow" --> A
@@ -64,6 +64,46 @@ claude mcp add data-warehouse -- uv --directory /ABSOLUTE/PATH/TO/mcp-data-wareh
 ```
 
 (If `uv` isn't on PATH for the GUI app, use its absolute path from `which uv` / `where uv`.)
+
+## Deploy on Kubernetes (k3d + Helm)
+
+The server also runs as a stateless HTTP workload: `MCP_TRANSPORT=streamable-http` switches FastMCP to the streamable-HTTP transport and serves `GET /health` for probes. The deterministic warehouse is baked into the image at build time, so the pod needs no storage and every replica is identical.
+
+```mermaid
+flowchart LR
+    U["MCP client<br/>(port-forward or in-cluster)"] --> S["Service<br/>:8000"]
+    S --> P["Pod: mcp-data-warehouse<br/>non-root · read-only rootfs<br/>liveness + readiness /health<br/>cpu/mem requests + limits"]
+    CM["ConfigMap<br/>(DB + audit paths, port)"] --> P
+    P --> DB[("warehouse.duckdb<br/>baked into image, READ_ONLY")]
+    P -. "audit.jsonl" .-> V["emptyDir /tmp"]
+```
+
+On a fresh machine with Docker, [k3d](https://k3d.io) and Helm installed:
+
+```bash
+git clone https://github.com/Shimiyahya/mcp-data-warehouse-server && cd mcp-data-warehouse-server
+k3d cluster create mcp && helm install warehouse deploy/helm/mcp-data-warehouse
+```
+
+The default image is `ghcr.io/shimiyahya/mcp-data-warehouse-server`, published by CI on every version tag. Then port-forward and query it:
+
+```bash
+kubectl port-forward svc/warehouse-mcp-data-warehouse 8000:8000
+uv run python scripts/smoke_http.py     # health + MCP handshake + a real query
+```
+
+To deploy a locally built image instead (no registry):
+
+```bash
+docker build -t mcp-data-warehouse-server:dev .
+k3d image import mcp-data-warehouse-server:dev -c mcp
+helm install warehouse deploy/helm/mcp-data-warehouse \
+  --set image.repository=mcp-data-warehouse-server --set image.tag=dev --set image.pullPolicy=Never
+```
+
+The chart ships liveness/readiness probes and resource requests/limits as first-class values, not afterthoughts: without probes Kubernetes cannot tell a booting pod from a wedged one, and without limits one runaway query competes with every other tenant on the node.
+
+**Why read-only-by-design matters more in a multi-tenant cluster.** On a laptop, a compromised MCP server risks one developer's synthetic database. In a shared cluster the blast radius is different: the pod has a network position (it can reach in-cluster services), a service account, and neighbors on the same node. This server's layers are designed so that even a fully prompt-injected client stays contained: the DuckDB connection is physically read-only, the SQL guard rejects anything but single `SELECT`/`WITH` statements over allow-listed tables, DuckDB's file/network functions are blocked, and the pod itself runs as non-root with a read-only root filesystem, no capabilities, and no privilege escalation. The audit log lands on an ephemeral volume, so even logging can't fill a node disk. Defense in depth is what lets a data-access workload share a cluster honestly.
 
 ## The data
 
@@ -163,7 +203,7 @@ Here is exactly what protects the database:
 ## Design decisions
 
 - **DuckDB:** an embedded columnar OLAP engine. Zero infra, fast aggregations, and a genuine "warehouse" feel for financial analytics.
-- **Official `mcp` SDK + `FastMCP` + stdio:** the canonical, dependency-light way to build an MCP server; drops straight into Claude Desktop / Claude Code.
+- **Official `mcp` SDK + `FastMCP`:** the canonical, dependency-light way to build an MCP server; drops straight into Claude Desktop / Claude Code over stdio, and serves streamable HTTP (`MCP_TRANSPORT=streamable-http`) for containers and Kubernetes.
 - **Integer minor units** for money, to avoid floating-point drift in sums.
 - **Deterministic seed:** makes the data auditable, the demo repeatable, and the tests reliable; the `.duckdb` binary is regenerated rather than committed.
 
